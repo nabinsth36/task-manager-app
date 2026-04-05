@@ -1,0 +1,13 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  width: 50%;
+  border: 0.2em solid blue;
+  padding: 1em;
+  margin: 0 auto;
+  text-align: center;
+}
