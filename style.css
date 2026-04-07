@@ -5,9 +5,6 @@
 }
 
 body {
-  width: 50%;
-  border: 0.2em solid blue;
-  padding: 1em;
+  width: 80%;
   margin: 0 auto;
-  text-align: center;
 }
