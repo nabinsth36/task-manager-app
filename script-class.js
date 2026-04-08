@@ -12,16 +12,36 @@ class TaskManager {
   }
 
   removeTask(index) {
-    this.tasks.splice(index, 1);
+    if (index >= 0 && index < this.tasks.length) {
+      this.tasks.splice(index, 1);
+    }
+  }
+
+  toggleTask(index) {
+    this.tasks[index].completed = !this.tasks[index].completed;
   }
 }
 function renderTasks(tasks) {
   taskListUl.innerHTML = ""; // clear previous list
 
-  tasks.forEach((task) => {
-    const taskLi = document.createElement("ul");
-    taskLi.textContent = task;
+  tasks.forEach((task, index) => {
+    const taskLi = document.createElement("li");
+    const taskSpan = document.createElement("span");
+    const removeBtn = document.createElement("button");
+
+    taskSpan.textContent = task;
+    removeBtn.textContent = "❌";
+
+    taskLi.append(taskSpan, removeBtn);
     taskListUl.append(taskLi);
+
+    // remove task from data structure
+    removeBtn.addEventListener("click", function () {
+      taskManager.removeTask(index);
+      renderTasks(taskManager.tasks); // re-render
+    });
+
+    // toggle task in data structure
   });
 }
 
@@ -34,7 +54,7 @@ addBtnEl.addEventListener("click", function () {
   if (taskText.trim() === "") return; // prevent empty task
 
   // data update
-  taskManager.addTask(taskText);
+  taskManager.addTask({ text: taskText, completed: false });
 
   // UI update
 
