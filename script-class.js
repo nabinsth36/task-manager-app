@@ -55,6 +55,13 @@ class TaskManager {
       showError("Failed to load saved tasks");
     }
   }
+
+  updateTask(index, newText) {
+    if (index >= 0 && index < this.tasks.length) {
+      this.tasks[index].text = newText;
+      this.saveToLocalStorage();
+    }
+  }
 }
 
 let currentFilter = "all";
@@ -62,11 +69,21 @@ let currentFilter = "all";
 function renderTasks(tasks) {
   taskListUl.innerHTML = ""; // clear previous list
 
+  if (tasks.length === 0) {
+    const emptyMsg = document.createElement("p");
+    emptyMsg.textContent = "No tasks yet. Add one!";
+    emptyMsg.style.textAlign = "center";
+    emptyMsg.style.color = "#888";
+
+    taskListUl.append(emptyMsg);
+  }
+
   tasks
     .map((task, index) => ({ ...task, originalIndex: index }))
     .filter((task) => {
       if (currentFilter === "completed") return task.completed;
       if (currentFilter === "pending") return !task.completed;
+
       return true;
     })
     .forEach(({ text, completed, originalIndex }) => {
@@ -77,15 +94,16 @@ function renderTasks(tasks) {
       const removeBtn = document.createElement("button");
       const toggleBtn = document.createElement("input");
 
-      // taskLi.dataset.index = index; // key fix
-
       toggleBtn.type = "checkbox";
       toggleBtn.checked = completed; // Set checkbox state based on task data
 
       taskSpan.textContent = text;
 
       // Add a style if the task is finished
-      if (completed) taskSpan.style.textDecoration = "line-through";
+      if (completed) {
+        taskSpan.style.textDecoration = "line-through";
+        taskSpan.style.opacity = "0.5";
+      }
 
       removeBtn.textContent = "❌";
 
@@ -93,6 +111,23 @@ function renderTasks(tasks) {
       taskLi.append(toggleBtn, taskSpan, removeBtn);
       taskListUl.append(taskLi);
     });
+
+  const counterEl = document.getElementById("taskCounter");
+
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.completed).length;
+  const pending = total - completed;
+
+  counterEl.textContent = `Total: ${total} | Completed: ${completed} | Pending: ${pending}`;
+  taskListUl.after(taskCounter);
+}
+
+function setActiveFilter(buttonId) {
+  document.querySelectorAll("button").forEach((btn) => {
+    btn.classList.remove("active");
+  });
+
+  document.getElementById(buttonId).classList.add("active");
 }
 
 // Use ONE event listener (Outside) on <ul>
@@ -112,6 +147,44 @@ taskListUl.addEventListener("click", function (e) {
     // toggle task in data structure
     taskManager.toggleTask(index);
     renderTasks(taskManager.tasks); // re-render
+  }
+
+  if (e.target.matches("span")) {
+    // edit task in data structure
+    const span = e.target;
+    const li = span.closest("li");
+    const index = Number(li.dataset.index);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = span.textContent;
+
+    li.replaceChild(input, span);
+    input.focus();
+
+    // Save on Enter
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        const newText = input.value.trim();
+
+        if (newText !== "") {
+          taskManager.updateTask(index, newText);
+        }
+
+        renderTasks(taskManager.tasks);
+      }
+    });
+
+    // Save on blur
+    input.addEventListener("blur", function () {
+      const newText = input.value.trim();
+
+      if (newText !== "") {
+        taskManager.updateTask(index, newText);
+      }
+
+      renderTasks(taskManager.tasks);
+    });
   }
 });
 
@@ -154,25 +227,37 @@ addBtnEl.addEventListener("click", function () {
     addBtnEl.disabled = false;
 
     taskInputEl.value = ""; // clear input AFTER success
+    taskInputEl.focus();
 
     isAdding = false;
   });
+});
+
+// Enter key support
+
+taskInputEl.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    addBtnEl.click();
+  }
 });
 
 // Filter event listeners
 
 document.getElementById("filterAll").addEventListener("click", () => {
   currentFilter = "all";
+  setActiveFilter("filterAll");
   renderTasks(taskManager.tasks);
 });
 
 document.getElementById("filterCompleted").addEventListener("click", () => {
   currentFilter = "completed";
+  setActiveFilter("filterCompleted");
   renderTasks(taskManager.tasks);
 });
 
 document.getElementById("filterPending").addEventListener("click", () => {
   currentFilter = "pending";
+  setActiveFilter("filterPending");
   renderTasks(taskManager.tasks);
 });
 
